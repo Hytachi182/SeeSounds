@@ -171,7 +171,7 @@ Une amélioration, un problème ou une méthode d'apprentissage à proposer ? [O
 
 ## Préversion publique et licence
 
-Le code est disponible sous [licence MIT](LICENSE). Il s'agit d'une préversion publique ; la lecture réelle des MP3 sur macOS et la distribution d'applications autonomes restent à valider. Consultez le [bilan de publication](PUBLIC_RELEASE_REVIEW.md) pour connaître les contrôles effectués et les étapes restantes.
+Le code est disponible sous [licence MIT](LICENSE). Il s'agit d'une préversion publique ; la lecture sur des périphériques audio physiques et la distribution d'applications autonomes restent à valider. L'installation native macOS, le lancement de l'application et le décodage d'un MP3 synthétique sont couverts par le workflow de validation. Consultez le [bilan de publication](PUBLIC_RELEASE_REVIEW.md) pour connaître les contrôles effectués et les étapes restantes.
 
 Les imports JSON fusionnent les entrées selon le chemin du fichier : les métadonnées des sons existants sont mises à jour, tout en conservant l'historique d'entraînement et d'examen. Les bibliothèques invalides sont rejetées sans écriture partielle. Les sons utilisés dans des examens terminés doivent être désactivés plutôt que supprimés pour préserver leur historique de correction.
 

@@ -2,7 +2,7 @@ name: macOS release validation
 on:
   workflow_dispatch:
   push:
-    branches: [main, 'fix/macos-release-validation']
+    branches: [main]
   pull_request:
     branches: [main]
 permissions:
@@ -37,9 +37,10 @@ jobs:
           ditto dist/SoundRecognitionTrainer.app "$APP_DIR/SoundRecognitionTrainer.app"
           AUDIO="$PWD/tests/fixtures/tone.mp3"
           REPORT="$PWD/build/mac-validation/packaged.json"
+          VERIFY="$PWD/scripts/verify_packaged_launch.py"
           EXECUTABLE="$APP_DIR/SoundRecognitionTrainer.app/Contents/MacOS/SoundRecognitionTrainer"
           cd "$APP_DIR"
-          env -u PYTHONPATH -u QT_QPA_PLATFORM PATH=/usr/bin:/bin "$EXECUTABLE" --self-test --audio "$AUDIO" --report "$REPORT"
+          env -u QT_QPA_PLATFORM python "$VERIFY" "$EXECUTABLE" --audio "$AUDIO" --report "$REPORT"
           /usr/bin/plutil -lint SoundRecognitionTrainer.app/Contents/Info.plist
           /usr/bin/codesign --verify --deep --strict SoundRecognitionTrainer.app
       - name: Save integration evidence

@@ -171,7 +171,7 @@ Have an improvement, a bug report, or a learning workflow to suggest? Please [op
 
 ## Public preview and license
 
-The source is available under the [MIT license](LICENSE). This is a public preview; real MP3 playback on macOS and standalone package distribution still require validation. See [the release review](PUBLIC_RELEASE_REVIEW.md) for checked items and remaining release work.
+The source is available under the [MIT license](LICENSE). This is a public preview; playback through physical audio devices and standalone package distribution still require validation. Native macOS installation, app launch and synthetic MP3 decoding are covered by the release-validation workflow. See [the release review](PUBLIC_RELEASE_REVIEW.md) for checked items and remaining release work.
 
 JSON imports merge by file path: existing sound metadata is updated while training and exam history is retained. Invalid libraries are rejected without partial writes. Sounds used in completed exams must be disabled rather than removed to preserve their review history.
 
