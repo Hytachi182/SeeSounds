@@ -1,6 +1,7 @@
 from __future__ import annotations
 from datetime import datetime, timezone
 from pathlib import Path
+import sqlite3
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import *
@@ -8,7 +9,7 @@ from src.database import Repository
 from src.models import Sound
 from src.services.audio import AudioPlayer
 from src.services.selection import exam_questions, multiple_choice_options, training_choice
-from src.utils.answers import compare_answer
+from src.utils.answers import compare_answer, MatchResult, normalize_answer
 
 FRENCH = {"Home":"Accueil","Sound Library":"Bibliothèque sonore","Training":"Entraînement","Exam":"Examen","Statistics":"Statistiques","Settings":"Paramètres","About":"À propos","Add MP3 files":"Ajouter des MP3","Preview":"Écouter","Edit":"Modifier","Remove":"Supprimer","Import JSON":"Importer JSON","Export JSON":"Exporter JSON","Select shown":"Tout sélectionner","Assign category":"Attribuer la catégorie","Clear":"Effacer","Start a training round":"Commencer un entraînement","Set up an exam":"Préparer un examen","Play a new sound":"Lire un nouveau son","Replay":"Réécouter","Pause / resume":"Pause / reprendre","Reveal answer":"Afficher la réponse","I missed it":"Je ne savais pas","I was correct":"J'avais juste","Start exam":"Commencer l'examen","Submit answer":"Valider la réponse","Cancel":"Annuler","New exam":"Nouvel examen","Save local settings":"Enregistrer les paramètres","Language":"Langue","Volume":"Volume","Your data":"Vos données","Your audio":"Vos audios","Cloud and accounts":"Cloud et comptes","Workspace":"Espace local"}
 FRENCH.update({"Learn the sound. Trust the answer.":"Apprenez le son. Faites confiance à votre réponse.","A focused, local workspace for turning your MP3 collection into exam confidence.":"Un espace local pour transformer vos MP3 en confiance pour l'examen.","Manage the source material for every practice session. Original MP3 files are never modified.":"Gérez les sons de vos séances. Les MP3 originaux ne sont jamais modifiés.","Practise deliberately. No timer, no penalty — only useful repetition.":"Entraînez-vous sans chronomètre ni pénalité, avec des répétitions utiles.","Turn practice into a clear result, then replay every sound worth revisiting.":"Transformez vos entraînements en résultat clair, puis réécoutez les sons à revoir.","Use recent evidence to choose what deserves your next practice session.":"Utilisez vos résultats récents pour choisir les sons à retravailler.","Local defaults for playback and free-text answer assessment.":"Préférences locales de lecture et d'évaluation des réponses.","A focused, offline desktop tool for serious sound-recognition practice.":"Un outil de bureau hors ligne pour un entraînement sérieux à la reconnaissance sonore.","Search sound name or category":"Rechercher un son ou une catégorie","Choose or type a category":"Choisir ou saisir une catégorie","Start every playback at":"Démarrer toutes les lectures à","Default offset for new sounds":"Décalage par défaut des nouveaux sons","Correct threshold":"Seuil de bonne réponse","Almost-correct threshold":"Seuil de réponse approchante","Reveal in exam":"Afficher la réponse pendant l'examen","Allow repeats":"Autoriser les répétitions","Prioritize difficult":"Privilégier les sons difficiles","All categories":"Toutes les catégories","Scope":"Périmètre","Questions":"Questions","Difficulty":"Niveau","Show missed and almost-correct only":"Afficher seulement les erreurs et réponses approchantes","Replay selected sound":"Réécouter le son sélectionné","Sound":"Son","Category":"Catégorie","Offset":"Décalage","Ready":"Prêt","File":"Fichier","Attempts":"Tentatives","Success":"Réussite","Last practiced":"Dernier entraînement","Your answer":"Votre réponse","Expected answer":"Réponse attendue","Similarity":"Similarité","Outcome":"Résultat","LOCAL WORKSPACE\nNo account. No cloud.":"ESPACE LOCAL\nSans compte. Sans cloud."})
@@ -30,7 +31,11 @@ class SoundDialog(QDialog):
         if p: self.path.setText(p); self.name.setText(self.name.text() or Path(p).stem)
     def accept(self):
         if not self.name.text().strip() or not self.path.text().strip(): QMessageBox.warning(self,"Missing information","A display name and MP3 file are required."); return
-        self.repo.save_sound(self.name.text().strip(),self.path.text().strip(),self.offset.value(),self.enabled.isChecked(),self.category.text().strip() or None,self.aliases.text().split(","),self.sound.id if self.sound else None); super().accept()
+        try:
+            self.repo.save_sound(self.name.text().strip(),self.path.text().strip(),self.offset.value(),self.enabled.isChecked(),self.category.text().strip() or None,self.aliases.text().split(","),self.sound.id if self.sound else None)
+        except sqlite3.IntegrityError:
+            QMessageBox.warning(self,"Already in library","This file is already in your library. Edit its existing entry instead."); return
+        super().accept()
 
 class MainWindow(QMainWindow):
     def __init__(self, repo: Repository):
@@ -64,7 +69,7 @@ class MainWindow(QMainWindow):
         w=QWidget();l=QVBoxLayout(w);top=QHBoxLayout();self.exam_progress=QLabel();self.exam_feedback=QLabel();top.addWidget(self.exam_progress);top.addStretch();top.addWidget(self.exam_feedback);l.addLayout(top);stage=self.panel();stage.setObjectName("exam_stage");sl=QVBoxLayout(stage);self.exam_prompt=QLabel("Listen carefully.");self.exam_prompt.setObjectName("stage_question");self.exam_prompt.setAlignment(Qt.AlignmentFlag.AlignCenter);self.exam_answer=QLineEdit();self.exam_answer.setPlaceholderText("Type the sound name");self.options=QVBoxLayout();sl.addWidget(self.exam_prompt);sl.addWidget(self.exam_answer);sl.addLayout(self.options);l.addWidget(stage,1);a=QHBoxLayout();
         for label,fn,kind in (("Replay",self.replay_exam,"secondary"),("Pause / resume",self.audio.pause_or_resume,"quiet"),("Cancel",self.cancel_exam,"quiet")):
             b=button(label,kind);b.clicked.connect(fn);a.addWidget(b)
-        a.addStretch();self.submit=button("Submit answer");self.submit.clicked.connect(self.submit_answer);a.addWidget(self.submit);l.addLayout(a);return w
+        a.addStretch();self.submit=button("Submit answer");self.submit.clicked.connect(lambda checked=False:self.submit_answer());a.addWidget(self.submit);l.addLayout(a);return w
     def exam_results(self):
         w=QWidget();l=QVBoxLayout(w);banner=self.panel();banner.setObjectName("result_banner");bl=QHBoxLayout(banner);self.result_score=QLabel();self.result_score.setObjectName("result_score");self.result_detail=QLabel();self.result_detail.setObjectName("result_detail");bl.addWidget(self.result_score);bl.addWidget(self.result_detail,1);l.addWidget(banner);a=QHBoxLayout();self.missed=QCheckBox("Show missed and almost-correct only");self.missed.toggled.connect(self.populate_results);a.addWidget(self.missed);a.addStretch();b=button("Replay selected sound","secondary");b.clicked.connect(self.replay_result);a.addWidget(b);n=button("New exam");n.clicked.connect(lambda:self.exam_stack.setCurrentIndex(0));a.addWidget(n);l.addLayout(a);self.results=QTableWidget(0,5);self.results.setObjectName("data_table");self.results.setHorizontalHeaderLabels(("Sound","Your answer","Expected answer","Similarity","Outcome"));self.results.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.results.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.results.verticalHeader().setVisible(False);self.results.horizontalHeader().setStretchLastSection(True);self.results.doubleClicked.connect(self.replay_result);l.addWidget(self.results,1);return w
     def statistics(self):
@@ -86,7 +91,12 @@ class MainWindow(QMainWindow):
             for c,v in enumerate((s.name,s.category or "Uncategorised",f"{s.start_offset:.2f} s","Enabled" if s.enabled else "Paused",str(s.filepath))): it=QTableWidgetItem(v);it.setData(Qt.ItemDataRole.UserRole,s.id);self.table.setItem(r,c,it)
     def selected(self): return [self.repo.sound(self.table.item(x.row(),0).data(Qt.ItemDataRole.UserRole)) for x in self.table.selectionModel().selectedRows()]
     def add_sounds(self):
-        files,_=QFileDialog.getOpenFileNames(self,"Add MP3 files",filter="MP3 files (*.mp3)");[self.repo.save_sound(Path(x).stem,x,self.repo.settings()["default_offset"],True,None,[]) for x in files];self.refresh_library()
+        files,_=QFileDialog.getOpenFileNames(self,"Add MP3 files",filter="MP3 files (*.mp3)")
+        existing={str(sound.filepath) for sound in self.repo.sounds()}
+        for file in files:
+            if file not in existing:
+                self.repo.save_sound(Path(file).stem,file,self.repo.settings()["default_offset"],True,None,[]);existing.add(file)
+        self.refresh_library()
     def preview(self):
         x=self.selected(); self.play_sound(x[0]) if x else QMessageBox.information(self,"Select a sound","Select a library row first.")
     def edit(self):
@@ -111,14 +121,23 @@ class MainWindow(QMainWindow):
     def remove(self):
         x=self.selected()
         if x and QMessageBox.question(self,"Remove sounds",f"Remove {len(x)} selected sound(s) and their local history?",QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)==QMessageBox.StandardButton.Yes:
-            [self.repo.delete_sound(s.id) for s in x];self.refresh_library()
+            try:
+                for sound in x:self.repo.delete_sound(sound.id)
+            except ValueError as error:
+                QMessageBox.warning(self,"Keep exam history",str(error))
+            self.refresh_library()
     def export_library(self):
         p,_=QFileDialog.getSaveFileName(self,"Export library","sound-library.json","JSON (*.json)")
-        if p:self.repo.export_library(Path(p))
+        if p:
+            try:self.repo.export_library(Path(p))
+            except OSError as error:QMessageBox.warning(self,"Export failed",str(error))
     def import_library(self):
         p,_=QFileDialog.getOpenFileName(self,"Import library",filter="JSON (*.json)")
         if p:
-            missing=self.repo.import_library(Path(p));self.refresh_library();QMessageBox.warning(self,"Missing paths","\n".join(missing)) if missing else None
+            try:missing=self.repo.import_library(Path(p))
+            except (OSError, ValueError, sqlite3.Error) as error:
+                QMessageBox.warning(self,"Import failed",str(error));return
+            self.refresh_library();QMessageBox.warning(self,"Missing paths","\n".join(missing)) if missing else None
     def refresh_filters(self):
         current=self.training_category.currentData();self.training_category.clear();self.training_category.addItem("All categories",None);[self.training_category.addItem(c,c) for c in sorted({x.category for x in self.repo.sounds(enabled_only=True) if x.category})];self.training_category.setCurrentIndex(max(0,self.training_category.findData(current)))
     def next_training(self):
@@ -144,12 +163,18 @@ class MainWindow(QMainWindow):
         while self.options.count():i=self.options.takeAt(0);i.widget().deleteLater() if i.widget() else None
         if not free:
             for o in multiple_choice_options(s,self.repo.sounds(enabled_only=True)):
-                b=button(o.name,"choice");b.clicked.connect(lambda checked=False,n=o.name:self.submit_answer(n));self.options.addWidget(b)
+                b=button(o.name,"choice");b.clicked.connect(lambda checked=False,choice=o:self.submit_answer(choice.name,choice.id));self.options.addWidget(b)
         self.play_sound(s)
     def replay_exam(self):
         if self.exam:self.play_sound(self.exam["questions"][self.exam["index"]])
-    def submit_answer(self,answer=None):
-        s=self.exam["questions"][self.exam["index"]];answer=self.exam_answer.text() if answer is None else answer;m=compare_answer(answer,s.name,self.repo.aliases(s.id),self.repo.settings()["correct_threshold"],self.repo.settings()["almost_threshold"]);self.exam["answers"].append({"sound":s,"answer":answer,"normalized":m.normalized,"similarity":m.similarity,"result":m.result})
+    def submit_answer(self,answer=None,choice_id=None):
+        if not self.exam:return
+        s=self.exam["questions"][self.exam["index"]];answer=self.exam_answer.text() if answer is None else answer
+        if self.exam["difficulty"]==1:
+            correct=choice_id==s.id;m=MatchResult(normalize_answer(answer),100.0 if correct else 0.0,"correct" if correct else "incorrect",s.name)
+        else:
+            m=compare_answer(answer,s.name,self.repo.aliases(s.id),self.repo.settings()["correct_threshold"],self.repo.settings()["almost_threshold"])
+        self.exam["answers"].append({"sound":s,"answer":answer,"normalized":m.normalized,"similarity":m.similarity,"result":m.result})
         if self.exam["reveal"]:QMessageBox.information(self,"Answer recorded",f"Expected: {s.name}\n{m.result.title()} · {m.similarity:.0f}%")
         self.exam["index"]+=1;self.show_question() if self.exam["index"]<len(self.exam["questions"]) else self.finish_exam()
     def finish_exam(self):

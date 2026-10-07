@@ -23,9 +23,13 @@ $venvPython = Join-Path $PSScriptRoot '.venv\Scripts\python.exe'
 if (-not (Test-Path -LiteralPath $venvPython)) {
     Write-Host "Creating virtual environment with $versionOutput..."
     & $pythonExe -m venv (Join-Path $PSScriptRoot '.venv')
+    if ($LASTEXITCODE -ne 0) { throw 'Virtual environment creation failed.' }
 }
 
 & $venvPython -m pip install --upgrade pip
+if ($LASTEXITCODE -ne 0) { throw 'Unable to upgrade pip. Check the network connection and retry.' }
 & $venvPython -m pip install -r (Join-Path $PSScriptRoot 'requirements.txt')
+if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed. Check the error above and retry.' }
 & $venvPython -c "import PySide6, rapidfuzz; print('Dependencies validated.')"
+if ($LASTEXITCODE -ne 0) { throw 'Dependency validation failed. Run the installer again.' }
 Write-Host 'Installation complete. Run .\run_windows.ps1 to open the application.' -ForegroundColor Green

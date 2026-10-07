@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import math
 import sqlite3
 from pathlib import Path
 from datetime import datetime, timezone
@@ -59,7 +60,7 @@ class Repository:
         if not row: raise KeyError(sound_id)
         return self._sound(row)
 
-    def save_sound(self, name: str, filepath: str, offset: float, enabled: bool, category: str | None, aliases: list[str], sound_id: int | None = None) -> int:
+    def _save_sound(self, name: str, filepath: str, offset: float, enabled: bool, category: str | None, aliases: list[str], sound_id: int | None = None) -> int:
         now = datetime.now(timezone.utc).isoformat()
         if sound_id is None:
             cursor = self.connection.execute("INSERT INTO sounds(name,filepath,start_offset,enabled,category,created_at,updated_at) VALUES (?,?,?,?,?,?,?)", (name, filepath, offset, enabled, category or None, now, now)); sound_id = cursor.lastrowid
@@ -67,10 +68,17 @@ class Repository:
             self.connection.execute("UPDATE sounds SET name=?,filepath=?,start_offset=?,enabled=?,category=?,updated_at=? WHERE id=?", (name, filepath, offset, enabled, category or None, now, sound_id))
             self.connection.execute("DELETE FROM sound_aliases WHERE sound_id=?", (sound_id,))
         self.connection.executemany("INSERT INTO sound_aliases(sound_id,alias) VALUES (?,?)", [(sound_id, alias.strip()) for alias in aliases if alias.strip()])
-        self.connection.commit(); return int(sound_id)
+        return int(sound_id)
+
+    def save_sound(self, name: str, filepath: str, offset: float, enabled: bool, category: str | None, aliases: list[str], sound_id: int | None = None) -> int:
+        with self.connection:
+            return self._save_sound(name, filepath, offset, enabled, category, aliases, sound_id)
 
     def delete_sound(self, sound_id: int) -> None:
-        self.connection.execute("DELETE FROM sounds WHERE id=?", (sound_id,)); self.connection.commit()
+        if self.connection.execute("SELECT 1 FROM exam_answers WHERE sound_id=?", (sound_id,)).fetchone():
+            raise ValueError("This sound belongs to a completed exam. Disable it instead to preserve exam history.")
+        with self.connection:
+            self.connection.execute("DELETE FROM sounds WHERE id=?", (sound_id,))
 
     def aliases(self, sound_id: int) -> list[str]:
         return [r[0] for r in self.connection.execute("SELECT alias FROM sound_aliases WHERE sound_id=?", (sound_id,))]
@@ -118,9 +126,27 @@ class Repository:
         destination.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
     def import_library(self, source: Path) -> list[str]:
-        missing = []
-        for item in json.loads(source.read_text(encoding="utf-8")):
-            file = item["filepath"]
-            self.save_sound(item["name"], file, float(item.get("start_offset", 0)), bool(item.get("enabled", True)), item.get("category"), item.get("aliases", []))
-            if not Path(file).is_file(): missing.append(file)
+        payload = json.loads(source.read_text(encoding="utf-8"))
+        if not isinstance(payload, list):
+            raise ValueError("A library must be a JSON array of sounds.")
+        prepared, missing = [], []
+        for index, item in enumerate(payload, 1):
+            if not isinstance(item, dict):
+                raise ValueError(f"Sound {index} must be an object.")
+            name, file = item.get("name"), item.get("filepath")
+            offset, enabled = item.get("start_offset", 0), item.get("enabled", True)
+            category, aliases = item.get("category"), item.get("aliases", [])
+            if not isinstance(name, str) or not name.strip() or not isinstance(file, str) or not file.strip() or "\x00" in file:
+                raise ValueError(f"Sound {index} requires a name and a valid file path.")
+            if isinstance(offset, bool) or not isinstance(offset, (int, float)) or not math.isfinite(offset) or not 0 <= offset <= 3600:
+                raise ValueError(f"Sound {index} offset must be between 0 and 3600 seconds.")
+            if not isinstance(enabled, bool) or (category is not None and not isinstance(category, str)) or not isinstance(aliases, list) or not all(isinstance(alias, str) for alias in aliases):
+                raise ValueError(f"Sound {index} has invalid enabled, category or aliases values.")
+            prepared.append((name.strip(), file, float(offset), enabled, category, aliases))
+            if not Path(file).is_file():
+                missing.append(file)
+        with self.connection:
+            for values in prepared:
+                existing = self.connection.execute("SELECT id FROM sounds WHERE filepath=?", (values[1],)).fetchone()
+                self._save_sound(*values, sound_id=existing[0] if existing else None)
         return missing

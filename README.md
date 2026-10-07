@@ -159,6 +159,16 @@ The generated application is placed in `dist/`.
 
 Have an improvement, a bug report, or a learning workflow to suggest? Please [open an issue](https://github.com/Hytachi182/SeeSounds/issues). Keep changes local-first, preserve source audio, and make assessment rules testable.
 
+## Public preview and license
+
+The source is available under the [MIT license](LICENSE). This is a public preview; real MP3 playback on macOS and standalone package distribution still require validation. See [the release review](PUBLIC_RELEASE_REVIEW.md) for checked items and remaining release work.
+
+JSON imports merge by file path: existing sound metadata is updated while training and exam history is retained. Invalid libraries are rejected without partial writes. Sounds used in completed exams must be disabled rather than removed to preserve their review history.
+
+Library exports include local file paths, names, categories and aliases. Review them before sharing. No audio is bundled: use recordings you are entitled to use or distribute.
+
+Third-party dependencies retain their own licenses. PySide6/Qt offers LGPL/GPL and commercial licensing options; the application's MIT license does not replace those terms. Before distributing standalone executables, review [Qt licensing](https://doc.qt.io/qt-6/licensing.html) and ship the applicable license notices and required dependency source information.
+
 ## Creator
 
 Designed and created by Michael Ruffenach.

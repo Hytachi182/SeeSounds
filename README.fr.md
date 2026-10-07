@@ -52,4 +52,14 @@ Sous Windows : `.\.venv\Scripts\python.exe -m pytest`.
 
 Sous macOS : `.venv/bin/python -m pytest`.
 
+## Version publique et licence
+
+Le code est sous [licence MIT](LICENSE). Cette version est une préversion publique : la lecture réelle des MP3 sur macOS et la distribution des exécutables restent à valider. Le [bilan de publication](PUBLIC_RELEASE_REVIEW.md) détaille les contrôles réalisés et les points restants.
+
+L'import JSON met à jour les sons déjà présents selon leur chemin de fichier, en conservant leur historique. Un import invalide est rejeté sans écriture partielle. Un son utilisé dans un examen terminé doit être désactivé plutôt que supprimé.
+
+Les exports JSON contiennent les chemins locaux des fichiers et les métadonnées de la bibliothèque : vérifiez-les avant de les partager. Aucun MP3 n'est fourni ; utilisez des enregistrements que vous avez le droit d'utiliser ou de distribuer.
+
+Les dépendances conservent leurs propres licences. Avant de distribuer des exécutables, vérifiez les [conditions de Qt/PySide6](https://doc.qt.io/qt-6/licensing.html) et joignez les notices et informations de sources applicables.
+
 Créé par Michael Ruffenach.
