@@ -23,7 +23,7 @@ def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     app = QApplication(sys.argv); app.setStyleSheet(STYLE)
     data_dir = Path.home() / ".sound-recognition-trainer"
-    window = MainWindow(Repository(data_dir / "sound_trainer.db")); window.show()
+    window = MainWindow(Repository(data_dir / "sound_trainer.db")); window.showMaximized()
     return app.exec()
 
 if __name__ == "__main__": raise SystemExit(main())

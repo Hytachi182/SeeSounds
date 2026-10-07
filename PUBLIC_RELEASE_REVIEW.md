@@ -24,7 +24,7 @@ GitHub was already public at review time. Its default branch was `devops`; `main
 
 ## Local evidence
 
-- Windows / Python 3.12: `python -m pytest -q` — 23 passed.
+- Windows / Python 3.12: `python -m pytest -q` — 29 passed after the French/localized-dialog and maximized-startup regression checks were added.
 - Installed environment: `python -m pip_audit --local --progress-spinner off` — no known vulnerabilities found after updating pytest. This covers the installed versions, not every version allowed by the dependency ranges or native libraries embedded in Qt.
 - Fresh database: all seven application pages opened through a Qt offscreen test. This verifies application construction/navigation, not visual layout or real audio output.
 - Git whitespace check passed.
@@ -38,6 +38,6 @@ Follow-up macOS validation on 2026-10-07: native Apple Silicon and Intel CI succ
 3. Keep the native packaged-launch/audio checks green on each target OS; physical speakers, representative user recordings and macOS download/Gatekeeper behavior remain outside CI coverage.
 4. Prepare dependency license notices and applicable Qt/FFmpeg source information before sharing executables. MIT covers this project's code; third-party terms remain separate. Reference: https://doc.qt.io/qt-6/licensing.html
 5. Confirm that any distributed recordings can be shared. JSON exports include local absolute paths and should be reviewed before publication.
-6. Review French coverage: dynamic messages and some controls still use English. Also avoid identical display names in multiple-choice exams, as visually identical options remain confusing even though scoring uses distinct IDs.
+6. Keep the French localization regression checks green for refreshed statistics, statuses, exam outcomes, dialogs and live language switching. User-entered names/categories are preserved. Avoid identical display names in multiple-choice exams, as visually identical options remain confusing even though scoring uses distinct IDs.
 
 After merging, `main` can be made the default branch through repository settings. No production deployment or public binary upload is part of this PR.

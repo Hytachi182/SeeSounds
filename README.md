@@ -63,6 +63,8 @@ Requirements: **Python 3.11 or later**. Audio playback uses the Qt multimedia ba
 
 ## Features
 
+The application opens maximized to use your screen's available space. You can restore and resize the window afterward. Select English or French in **About**; the choice is saved locally and applies to controls, live statistics, exam results and dialogs. Your sound names, aliases and categories retain the text you entered.
+
 | Available today | What it does |
 | --- | --- |
 | **MP3 library** | Import several files, search by name or category, edit display names, enable or pause sounds, and manage categories. |

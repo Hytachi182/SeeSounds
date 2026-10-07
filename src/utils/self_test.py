@@ -45,8 +45,14 @@ def run_self_test(style: str) -> int:
         with tempfile.TemporaryDirectory(prefix="seesounds-self-test-") as folder:
             repo = Repository(Path(folder) / "test.db")
             window = MainWindow(repo)
-            window.show()
+            window.showMaximized()
             wait_until(lambda: window.isVisible())
+            assert window.isMaximized() and not window.isFullScreen()
+            window.showNormal()
+            window.resize(1240,780)
+            app.processEvents()
+            assert not window.isMaximized() and not window.isFullScreen()
+            report["checks"].append("maximized startup and resizable normal window")
             assert not window.windowIcon().isNull(), "Application icon was not bundled"
             for language in ("en", "fr"):
                 window.language = language

@@ -63,6 +63,8 @@ Prérequis : **Python 3.11 ou plus récent**. La lecture audio utilise le moteur
 
 ## Fonctionnalités
 
+L'application s'ouvre maximisée pour utiliser l'espace disponible sur votre écran. Vous pouvez ensuite restaurer et redimensionner la fenêtre. Choisissez le français ou l'anglais dans **À propos** ; le choix est enregistré localement et s'applique aux commandes, aux statistiques actualisées, aux résultats d'examen et aux dialogues. Les noms, alias et catégories de vos sons conservent le texte que vous avez saisi.
+
 | Disponible aujourd'hui | Description |
 | --- | --- |
 | **Bibliothèque MP3** | Importez plusieurs fichiers, recherchez par nom ou catégorie, modifiez les noms affichés, activez ou désactivez les sons et gérez les catégories. |
