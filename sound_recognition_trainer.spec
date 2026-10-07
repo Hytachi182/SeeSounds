@@ -1,7 +1,12 @@
 # Build on the target operating system only: Windows on Windows, macOS on macOS.
-from PyInstaller.utils.hooks import collect_data_files
+import sys
 
-datas = collect_data_files("PySide6") + [("assets/sound-recognition-trainer.svg", "assets")]
+datas = [("assets/sound-recognition-trainer.svg", "assets"), ("LICENSE", ".")]
 a = Analysis(["app.py"], pathex=["."], datas=datas, hiddenimports=["PySide6.QtMultimedia"], noarchive=False)
 pyz = PYZ(a.pure)
-exe = EXE(pyz, a.scripts, a.binaries, a.datas, name="SoundRecognitionTrainer", console=False)
+if sys.platform == "darwin":
+    exe = EXE(pyz, a.scripts, exclude_binaries=True, name="SoundRecognitionTrainer", console=False)
+    coll = COLLECT(exe, a.binaries, a.datas, name="SoundRecognitionTrainer")
+    app = BUNDLE(coll, name="SoundRecognitionTrainer.app", bundle_identifier="com.seesounds.soundrecognitiontrainer")
+else:
+    exe = EXE(pyz, a.scripts, a.binaries, a.datas, name="SoundRecognitionTrainer", console=False)

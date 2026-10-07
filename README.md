@@ -143,6 +143,16 @@ On Windows, use:
 
 The generated application is placed in `dist/`.
 
+On macOS, the build creates `dist/SoundRecognitionTrainer.app`. Native Apple Silicon and Intel builds are checked separately. The macOS release-validation workflow also exercises a clean installation from a path containing spaces, incomplete-environment recovery, offline relaunch, dependency repair and the relocated `.app` using a synthetic MP3.
+
+For an isolated integration check (PySide6 6.8+), run:
+
+```bash
+python app.py --self-test --audio tests/fixtures/tone.mp3 --report build/self-test.json
+```
+
+This creates a temporary database and records a JSON report and screenshot without touching your learning workspace. Audio is muted, but decoded buffers, playback offsets, pause/resume and queue completion are checked. CI cannot confirm sound through physical speakers or Apple's approval of downloaded apps.
+
 ### Project layout
 
 | Area | Responsibility |

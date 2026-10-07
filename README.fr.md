@@ -143,6 +143,16 @@ Sous Windows, utilisez :
 
 L'application générée est placée dans `dist/`.
 
+Sur macOS, la compilation crée `dist/SoundRecognitionTrainer.app`. Les versions natives Apple Silicon et Intel sont vérifiées séparément. Le workflow de validation macOS vérifie aussi une installation vierge depuis un chemin contenant des espaces, la récupération d'un environnement incomplet, le redémarrage hors ligne, la réparation des dépendances et le lancement du `.app` déplacé avec un MP3 synthétique.
+
+Pour lancer un contrôle d'intégration isolé (PySide6 6.8+), utilisez :
+
+```bash
+python app.py --self-test --audio tests/fixtures/tone.mp3 --report build/self-test.json
+```
+
+Ce contrôle crée une base temporaire et produit un rapport JSON ainsi qu'une capture d'écran sans toucher à votre espace d'apprentissage. Le son est coupé, mais les données audio décodées, les décalages, la pause/reprise et la fin de la lecture enchaînée sont vérifiés. La CI ne peut pas confirmer le son dans des haut-parleurs physiques ni l'approbation des applications téléchargées par Apple.
+
 ### Organisation du projet
 
 | Élément | Rôle |
