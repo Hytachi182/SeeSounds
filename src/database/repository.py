@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from src.models import Sound
 
 
-DEFAULT_SETTINGS = {"volume": 70, "default_offset": 0.0, "global_playback_offset": 0.0, "correct_threshold": 90,
+DEFAULT_SETTINGS = {"language": "en", "volume": 70, "default_offset": 0.0, "global_playback_offset": 0.0, "correct_threshold": 90,
                     "almost_threshold": 75, "reveal_immediately": False,
                     "allow_repeats": False, "prioritize_difficult": True}
 

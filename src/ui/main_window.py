@@ -10,6 +10,8 @@ from src.services.audio import AudioPlayer
 from src.services.selection import exam_questions, multiple_choice_options, training_choice
 from src.utils.answers import compare_answer
 
+FRENCH = {"Home":"Accueil","Sound Library":"Bibliothèque sonore","Training":"Entraînement","Exam":"Examen","Statistics":"Statistiques","Settings":"Paramètres","About":"À propos","Add MP3 files":"Ajouter des MP3","Preview":"Écouter","Edit":"Modifier","Remove":"Supprimer","Import JSON":"Importer JSON","Export JSON":"Exporter JSON","Select shown":"Tout sélectionner","Assign category":"Attribuer la catégorie","Clear":"Effacer","Start a training round":"Commencer un entraînement","Set up an exam":"Préparer un examen","Play a new sound":"Lire un nouveau son","Replay":"Réécouter","Pause / resume":"Pause / reprendre","Reveal answer":"Afficher la réponse","I missed it":"Je ne savais pas","I was correct":"J'avais juste","Start exam":"Commencer l'examen","Submit answer":"Valider la réponse","Cancel":"Annuler","New exam":"Nouvel examen","Save local settings":"Enregistrer les paramètres","Language":"Langue","Volume":"Volume","Your data":"Vos données","Your audio":"Vos audios","Cloud and accounts":"Cloud et comptes","Workspace":"Espace local"}
+
 def button(text: str, kind: str = "primary") -> QPushButton:
     w = QPushButton(text); w.setObjectName(f"button_{kind}"); return w
 
@@ -31,12 +33,12 @@ class SoundDialog(QDialog):
 
 class MainWindow(QMainWindow):
     def __init__(self, repo: Repository):
-        super().__init__(); self.repo=repo; self.audio=AudioPlayer(repo.settings()["volume"]); self.training_sound=None; self.exam=None; self.last_exam_id=None; self.checked_sound_ids:set[int]=set(); self.setWindowTitle("Sound Recognition Trainer"); self.setWindowIcon(QIcon(str(Path(__file__).resolve().parents[2] / "assets" / "sound-recognition-trainer.svg"))); self.resize(1240,780); self.setMinimumSize(1000,680); self.build()
+        super().__init__(); self.repo=repo; self.language=repo.settings().get("language","en"); self.audio=AudioPlayer(repo.settings()["volume"]); self.training_sound=None; self.exam=None; self.last_exam_id=None; self.checked_sound_ids:set[int]=set(); self.setWindowTitle("Sound Recognition Trainer"); self.setWindowIcon(QIcon(str(Path(__file__).resolve().parents[2] / "assets" / "sound-recognition-trainer.svg"))); self.resize(1240,780); self.setMinimumSize(1000,680); self.build(); self.apply_language()
     def page(self,title,subtitle):
         p=QWidget(); l=QVBoxLayout(p); l.setContentsMargins(42,34,42,34); h=QLabel(title); h.setObjectName("page_title"); s=QLabel(subtitle); s.setObjectName("page_description"); l.addWidget(h);l.addWidget(s);return p,l
     def panel(self): w=QFrame();w.setObjectName("panel");return w
     def build(self):
-        root=QWidget(); r=QHBoxLayout(root);r.setContentsMargins(0,0,0,0);r.setSpacing(0);self.setCentralWidget(root); side=QFrame();side.setObjectName("sidebar");side.setFixedWidth(244);sl=QVBoxLayout(side);sl.setContentsMargins(22,28,18,22);brand=QLabel("Sound\nRecognition\nTrainer");brand.setObjectName("brand");sl.addWidget(brand);sl.addSpacing(28);self.nav=QListWidget();self.nav.setObjectName("navigation");self.nav.setIconSize(QSize(18,18));nav_items=(("Home",QStyle.StandardPixmap.SP_ComputerIcon),("Sound Library",QStyle.StandardPixmap.SP_DirOpenIcon),("Training",QStyle.StandardPixmap.SP_MediaPlay),("Exam",QStyle.StandardPixmap.SP_DialogApplyButton),("Statistics",QStyle.StandardPixmap.SP_FileDialogDetailedView),("Settings",QStyle.StandardPixmap.SP_FileDialogContentsView),("About",QStyle.StandardPixmap.SP_MessageBoxInformation));[self.nav.addItem(QListWidgetItem(self.style().standardIcon(icon),label)) for label,icon in nav_items];self.nav.currentRowChanged.connect(self.change);sl.addWidget(self.nav);sl.addStretch();f=QLabel("LOCAL WORKSPACE\nNo account. No cloud.");f.setObjectName("sidebar_footer");sl.addWidget(f);r.addWidget(side);self.pages=QStackedWidget();r.addWidget(self.pages,1)
+        root=QWidget(); r=QHBoxLayout(root);r.setContentsMargins(0,0,0,0);r.setSpacing(0);self.setCentralWidget(root); side=QFrame();side.setObjectName("sidebar");side.setFixedWidth(244);sl=QVBoxLayout(side);sl.setContentsMargins(22,28,18,22);brand=QLabel("Sound\nRecognition\nTrainer");brand.setObjectName("brand");sl.addWidget(brand);sl.addSpacing(28);self.nav=QListWidget();self.nav.setObjectName("navigation");self.nav.setIconSize(QSize(18,18));self.nav.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff);self.nav.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff);self.nav.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents);nav_items=(("Home",QStyle.StandardPixmap.SP_ComputerIcon),("Sound Library",QStyle.StandardPixmap.SP_DirOpenIcon),("Training",QStyle.StandardPixmap.SP_MediaPlay),("Exam",QStyle.StandardPixmap.SP_DialogApplyButton),("Statistics",QStyle.StandardPixmap.SP_FileDialogDetailedView),("Settings",QStyle.StandardPixmap.SP_FileDialogContentsView),("About",QStyle.StandardPixmap.SP_MessageBoxInformation));[self.nav.addItem(QListWidgetItem(self.style().standardIcon(icon),label)) for label,icon in nav_items];self.nav.currentRowChanged.connect(self.change);sl.addWidget(self.nav);sl.addStretch();f=QLabel("LOCAL WORKSPACE\nNo account. No cloud.");f.setObjectName("sidebar_footer");sl.addWidget(f);r.addWidget(side);self.pages=QStackedWidget();r.addWidget(self.pages,1)
         for p in (self.home(),self.library(),self.training(),self.exam_page(),self.statistics(),self.settings(),self.about()):self.pages.addWidget(p)
         self.nav.setCurrentRow(0)
     def home(self):
@@ -194,6 +196,21 @@ class MainWindow(QMainWindow):
 
     def selected(self):
         return [self.repo.sound(row_item.data(Qt.ItemDataRole.UserRole)) for row_item in self.table.selectionModel().selectedRows()]
+
+    def change_language(self):
+        self.language=self.language_choice.currentData();self.repo.set_settings({"language":self.language});self.apply_language()
+
+    def apply_language(self):
+        for widget in self.findChildren(QWidget):
+            if isinstance(widget,(QLabel,QPushButton,QCheckBox)):
+                source=widget.property("source_text") or widget.text();widget.setProperty("source_text",source);widget.setText(FRENCH.get(source,source) if self.language=="fr" else source)
+            elif isinstance(widget,QLineEdit):
+                source=widget.property("source_placeholder") or widget.placeholderText();widget.setProperty("source_placeholder",source);widget.setPlaceholderText(FRENCH.get(source,source) if self.language=="fr" else source)
+        for index in range(self.nav.count()):
+            item=self.nav.item(index);source=item.data(Qt.ItemDataRole.UserRole+1) or item.text();item.setData(Qt.ItemDataRole.UserRole+1,source);item.setText(FRENCH.get(source,source) if self.language=="fr" else source)
+
+    def about(self):
+        p,l=self.page("About Sound Recognition Trainer","A focused, offline desktop tool for serious sound-recognition practice.");card=self.panel();card.setObjectName("home_hero");cl=QVBoxLayout(card);name=QLabel("Sound Recognition Trainer");name.setObjectName("page_title");by=QLabel("Version 1.0.0 · Created by Michael Ruffenach");by.setObjectName("home_summary");copy=QLabel("Your MP3 files, names, aliases, scores and exam history stay on this computer. No cloud service and no account are required.");copy.setWordWrap(True);language=QComboBox();language.addItem("English","en");language.addItem("Français","fr");language.setCurrentIndex(max(0,language.findData(self.language)));language.currentIndexChanged.connect(self.change_language);self.language_choice=language;cl.addWidget(name);cl.addWidget(by);cl.addSpacing(10);cl.addWidget(copy);cl.addSpacing(12);cl.addWidget(QLabel("Language"));cl.addWidget(language);l.addWidget(card);l.addStretch();return p
 
     def save_settings(self):
         if self.almost.value()>self.correct.value():QMessageBox.warning(self,"Check thresholds","Almost-correct threshold cannot be higher than correct threshold.");return
