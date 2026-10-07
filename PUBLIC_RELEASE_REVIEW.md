@@ -24,18 +24,20 @@ GitHub was already public at review time. Its default branch was `devops`; `main
 
 ## Local evidence
 
-- Windows / Python 3.12: `python -m pytest -q` — 23 passed.
+- Windows / Python 3.12: `python -m pytest -q` — 29 passed after the French/localized-dialog and maximized-startup regression checks were added.
 - Installed environment: `python -m pip_audit --local --progress-spinner off` — no known vulnerabilities found after updating pytest. This covers the installed versions, not every version allowed by the dependency ranges or native libraries embedded in Qt.
 - Fresh database: all seven application pages opened through a Qt offscreen test. This verifies application construction/navigation, not visual layout or real audio output.
 - Git whitespace check passed.
 
 ## Before a stable release
 
+Follow-up macOS validation on 2026-10-07: native Apple Silicon and Intel CI successfully exercised clean source installation, offline relaunch, incomplete-environment recovery, missing-package repair, relocated `.app` launch and real synthetic MP3 decoding, offset, pause/resume and queue completion. Evidence: https://github.com/Hytachi182/SeeSounds/actions/runs/37624117513 . Windows source and packaged integration checks also passed. The `.app` is ad-hoc signed for local execution; this is not Apple Developer ID signing or notarization. A further CI check covers ordinary packaged startup with an isolated home and no Python on PATH.
+
 1. Confirm the PR's Windows/macOS CI matrix is green; test actual MP3 playback, offsets, queue interruption, training, both exam levels and review on both operating systems.
 2. Validate first-time install and launch on clean machines without a development environment, including offline relaunch and failed downloads.
-3. Test packaged application launch/audio on each target OS. A Windows build alone does not prove macOS packaging works.
+3. Keep the native packaged-launch/audio checks green on each target OS; physical speakers, representative user recordings and macOS download/Gatekeeper behavior remain outside CI coverage.
 4. Prepare dependency license notices and applicable Qt/FFmpeg source information before sharing executables. MIT covers this project's code; third-party terms remain separate. Reference: https://doc.qt.io/qt-6/licensing.html
 5. Confirm that any distributed recordings can be shared. JSON exports include local absolute paths and should be reviewed before publication.
-6. Review French coverage: dynamic messages and some controls still use English. Also avoid identical display names in multiple-choice exams, as visually identical options remain confusing even though scoring uses distinct IDs.
+6. Keep the French localization regression checks green for refreshed statistics, statuses, exam outcomes, dialogs and live language switching. User-entered names/categories are preserved. Avoid identical display names in multiple-choice exams, as visually identical options remain confusing even though scoring uses distinct IDs.
 
 After merging, `main` can be made the default branch through repository settings. No production deployment or public binary upload is part of this PR.

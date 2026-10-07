@@ -63,6 +63,8 @@ Prérequis : **Python 3.11 ou plus récent**. La lecture audio utilise le moteur
 
 ## Fonctionnalités
 
+L'application s'ouvre maximisée pour utiliser l'espace disponible sur votre écran. Vous pouvez ensuite restaurer et redimensionner la fenêtre. Choisissez le français ou l'anglais dans **À propos** ; le choix est enregistré localement et s'applique aux commandes, aux statistiques actualisées, aux résultats d'examen et aux dialogues. Les noms, alias et catégories de vos sons conservent le texte que vous avez saisi.
+
 | Disponible aujourd'hui | Description |
 | --- | --- |
 | **Bibliothèque MP3** | Importez plusieurs fichiers, recherchez par nom ou catégorie, modifiez les noms affichés, activez ou désactivez les sons et gérez les catégories. |
@@ -143,6 +145,16 @@ Sous Windows, utilisez :
 
 L'application générée est placée dans `dist/`.
 
+Sur macOS, la compilation crée `dist/SoundRecognitionTrainer.app`. Les versions natives Apple Silicon et Intel sont vérifiées séparément. Le workflow de validation macOS vérifie aussi une installation vierge depuis un chemin contenant des espaces, la récupération d'un environnement incomplet, le redémarrage hors ligne, la réparation des dépendances et le lancement du `.app` déplacé avec un MP3 synthétique.
+
+Pour lancer un contrôle d'intégration isolé (PySide6 6.8+), utilisez :
+
+```bash
+python app.py --self-test --audio tests/fixtures/tone.mp3 --report build/self-test.json
+```
+
+Ce contrôle crée une base temporaire et produit un rapport JSON ainsi qu'une capture d'écran sans toucher à votre espace d'apprentissage. Le son est coupé, mais les données audio décodées, les décalages, la pause/reprise et la fin de la lecture enchaînée sont vérifiés. La CI ne peut pas confirmer le son dans des haut-parleurs physiques ni l'approbation des applications téléchargées par Apple.
+
 ### Organisation du projet
 
 | Élément | Rôle |
@@ -161,7 +173,7 @@ Une amélioration, un problème ou une méthode d'apprentissage à proposer ? [O
 
 ## Préversion publique et licence
 
-Le code est disponible sous [licence MIT](LICENSE). Il s'agit d'une préversion publique ; la lecture réelle des MP3 sur macOS et la distribution d'applications autonomes restent à valider. Consultez le [bilan de publication](PUBLIC_RELEASE_REVIEW.md) pour connaître les contrôles effectués et les étapes restantes.
+Le code est disponible sous [licence MIT](LICENSE). Il s'agit d'une préversion publique ; la lecture sur des périphériques audio physiques et la distribution d'applications autonomes restent à valider. L'installation native macOS, le lancement de l'application et le décodage d'un MP3 synthétique sont couverts par le workflow de validation. Consultez le [bilan de publication](PUBLIC_RELEASE_REVIEW.md) pour connaître les contrôles effectués et les étapes restantes.
 
 Les imports JSON fusionnent les entrées selon le chemin du fichier : les métadonnées des sons existants sont mises à jour, tout en conservant l'historique d'entraînement et d'examen. Les bibliothèques invalides sont rejetées sans écriture partielle. Les sons utilisés dans des examens terminés doivent être désactivés plutôt que supprimés pour préserver leur historique de correction.
 

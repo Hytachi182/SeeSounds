@@ -17,10 +17,13 @@ QLineEdit,QComboBox,QSpinBox,QDoubleSpinBox {background:white;border:1px solid #
 """
 
 def main() -> int:
+    if "--self-test" in sys.argv:
+        from src.utils.self_test import run_self_test
+        return run_self_test(STYLE)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     app = QApplication(sys.argv); app.setStyleSheet(STYLE)
     data_dir = Path.home() / ".sound-recognition-trainer"
-    window = MainWindow(Repository(data_dir / "sound_trainer.db")); window.show()
+    window = MainWindow(Repository(data_dir / "sound_trainer.db")); window.showMaximized()
     return app.exec()
 
 if __name__ == "__main__": raise SystemExit(main())

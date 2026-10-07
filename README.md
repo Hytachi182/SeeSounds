@@ -63,6 +63,8 @@ Requirements: **Python 3.11 or later**. Audio playback uses the Qt multimedia ba
 
 ## Features
 
+The application opens maximized to use your screen's available space. You can restore and resize the window afterward. Select English or French in **About**; the choice is saved locally and applies to controls, live statistics, exam results and dialogs. Your sound names, aliases and categories retain the text you entered.
+
 | Available today | What it does |
 | --- | --- |
 | **MP3 library** | Import several files, search by name or category, edit display names, enable or pause sounds, and manage categories. |
@@ -143,6 +145,16 @@ On Windows, use:
 
 The generated application is placed in `dist/`.
 
+On macOS, the build creates `dist/SoundRecognitionTrainer.app`. Native Apple Silicon and Intel builds are checked separately. The macOS release-validation workflow also exercises a clean installation from a path containing spaces, incomplete-environment recovery, offline relaunch, dependency repair and the relocated `.app` using a synthetic MP3.
+
+For an isolated integration check (PySide6 6.8+), run:
+
+```bash
+python app.py --self-test --audio tests/fixtures/tone.mp3 --report build/self-test.json
+```
+
+This creates a temporary database and records a JSON report and screenshot without touching your learning workspace. Audio is muted, but decoded buffers, playback offsets, pause/resume and queue completion are checked. CI cannot confirm sound through physical speakers or Apple's approval of downloaded apps.
+
 ### Project layout
 
 | Area | Responsibility |
@@ -161,7 +173,7 @@ Have an improvement, a bug report, or a learning workflow to suggest? Please [op
 
 ## Public preview and license
 
-The source is available under the [MIT license](LICENSE). This is a public preview; real MP3 playback on macOS and standalone package distribution still require validation. See [the release review](PUBLIC_RELEASE_REVIEW.md) for checked items and remaining release work.
+The source is available under the [MIT license](LICENSE). This is a public preview; playback through physical audio devices and standalone package distribution still require validation. Native macOS installation, app launch and synthetic MP3 decoding are covered by the release-validation workflow. See [the release review](PUBLIC_RELEASE_REVIEW.md) for checked items and remaining release work.
 
 JSON imports merge by file path: existing sound metadata is updated while training and exam history is retained. Invalid libraries are rejected without partial writes. Sounds used in completed exams must be disabled rather than removed to preserve their review history.
 

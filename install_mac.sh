@@ -12,12 +12,12 @@ if ! command -v "$PYTHON" >/dev/null 2>&1; then
 fi
 
 if ! "$PYTHON" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)'; then
-  VERSION="$($PYTHON -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')"
+  VERSION="$("$PYTHON" -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')"
   echo "Python 3.11 or newer is required; found Python $VERSION." >&2
   exit 1
 fi
 
-if [[ ! -x "$VENV_PYTHON" ]]; then
+if [[ ! -x "$VENV_PYTHON" ]] || ! "$VENV_PYTHON" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' >/dev/null 2>&1; then
   if [[ -e "$SCRIPT_DIR/.venv" ]]; then
     BACKUP_PATH="$SCRIPT_DIR/.venv.invalid-$(date +%Y%m%d-%H%M%S)"
     mv "$SCRIPT_DIR/.venv" "$BACKUP_PATH"
@@ -28,6 +28,10 @@ if [[ ! -x "$VENV_PYTHON" ]]; then
 fi
 
 "$VENV_PYTHON" -m pip install --disable-pip-version-check --upgrade pip
-"$VENV_PYTHON" -m pip install --disable-pip-version-check -r "$SCRIPT_DIR/requirements.txt"
+PIP_REPAIR_ARGS=()
+if ! "$VENV_PYTHON" -c 'import PySide6, rapidfuzz' >/dev/null 2>&1; then
+  PIP_REPAIR_ARGS+=(--force-reinstall)
+fi
+"$VENV_PYTHON" -m pip install --disable-pip-version-check "${PIP_REPAIR_ARGS[@]}" -r "$SCRIPT_DIR/requirements.txt"
 "$VENV_PYTHON" -c 'import PySide6, rapidfuzz; print("Dependencies validated.")'
 echo "Installation complete. Start the application with: bash run_mac.sh"
