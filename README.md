@@ -4,9 +4,15 @@
 
 <h1 align="center">Sound Recognition Trainer</h1>
 
+<p align="center"><strong>English</strong> · <a href="README.fr.md">Français</a></p>
+
 <p align="center">
   Learn the sound. Trust the answer.<br>
   A focused, offline desktop application for serious MP3 sound-recognition practice.
+</p>
+
+<p align="center">
+  <a href="https://www.buymeacoffee.com/hytachi182"><img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-support%20the%20project-FFDD00?style=flat-square&logo=buymeacoffee&logoColor=black" alt="Buy Michael a coffee"></a>
 </p>
 
 <p align="center">

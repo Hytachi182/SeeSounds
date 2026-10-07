@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import random
 from PySide6.QtCore import QUrl
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from src.models import Sound
@@ -19,6 +20,8 @@ class AudioPlayer:
         self.player = QMediaPlayer()
         self.player.setAudioOutput(self.output)
         self._offset_ms = 0
+        self._queue: list[Sound] = []
+        self._queue_offset = 0.0
         self.player.mediaStatusChanged.connect(self._seek_when_ready)
 
     def play(self, sound: Sound, global_offset: float = 0.0) -> None:
@@ -30,9 +33,18 @@ class AudioPlayer:
     def _seek_when_ready(self, status: QMediaPlayer.MediaStatus) -> None:
         if status == QMediaPlayer.MediaStatus.LoadedMedia:
             self.player.setPosition(self._offset_ms)
+        elif status == QMediaPlayer.MediaStatus.EndOfMedia and self._queue:
+            self.play(self._queue.pop(0), self._queue_offset)
+
+    def play_queue(self, sounds: list[Sound], global_offset: float = 0.0, shuffle: bool = False) -> None:
+        self._queue = list(sounds)
+        if shuffle: random.shuffle(self._queue)
+        self._queue_offset = global_offset
+        if self._queue: self.play(self._queue.pop(0), global_offset)
 
     def pause_or_resume(self) -> None:
         self.player.pause() if self.player.playbackState() == QMediaPlayer.PlaybackState.PlayingState else self.player.play()
 
     def stop(self) -> None:
+        self._queue = []
         self.player.stop()

@@ -6,3 +6,6 @@ build/
 dist/
 *.spec.bak
 .sound-recognition-trainer/
+.serena/
+DESIGN.md
+PRODUCT.md
